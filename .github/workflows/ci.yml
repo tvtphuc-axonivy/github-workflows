@@ -193,17 +193,6 @@ jobs:
           */target/selenide/*
           */target/ivyEngine/deploy/*/*.deploymentLog
 
-      # -------------------------------------------------
-      # Checkout REUSABLE WORKFLOW repo (for extra words)
-      # -------------------------------------------------
-    # 2️⃣ Checkout REUSABLE repo vào subfolder
-    - name: Checkout reusable workflow repository
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ github.repository }}
-        ref: ${{ github.ref }}
-        path: .ci
-
     # -------------------------------------------------
     # Install & Run CSpell
     # -------------------------------------------------
@@ -212,45 +201,55 @@ jobs:
         npm install -g cspell@latest
         cspell --version
 
-    - name: Generate merged CSpell config
+    - name: Create custom cspell config
+      if: steps.check_branch.outputs.exists == 'true'
       run: |
-        BASE_CONFIG="${{ inputs.cspellConfig }}"              # from parent repo
-        EXTRA_WORDS_FILE=".ci/.github/cspell-extra-words.txt" # from reusable repo
-        GENERATED_CONFIG="cspell.generated.json"
-
-        if [ ! -f "$BASE_CONFIG" ]; then
-          echo "❌ Base cspell config not found in parent repo: $BASE_CONFIG"
-          exit 1
-        fi
-
-        if [ -f "$EXTRA_WORDS_FILE" ]; then
-          echo "Merging extra words from reusable workflow repo"
-
-          EXTRA_WORDS_JSON=$(grep -v '^\s*$' "$EXTRA_WORDS_FILE" \
-            | grep -v '^\s*#' \
-            | jq -R . \
-            | jq -s .)
-
-          jq \
-            --argjson extraWords "$EXTRA_WORDS_JSON" \
-            '.words = (.words + $extraWords | unique)' \
-            "$BASE_CONFIG" > "$GENERATED_CONFIG"
-        else
-          echo "No reusable extra words file found"
-          cp "$BASE_CONFIG" "$GENERATED_CONFIG"
-        fi
-
-        echo "Total words:"
-        jq '.words | length' "$GENERATED_CONFIG"
+        cat > cspell.json <<EOF
+        {
+          "version": "0.2",
+          "files": [
+            "**/*.md",
+            "**/*_en.yaml",
+            "**/variables.yaml",
+            "**/*.xhtml"
+          ],
+          "ignorePaths": [
+            "**/*_de.md",
+            "**/*_DE.md",
+            "**/webContent/layouts/frame*.xhtml",
+            "**/webContent/layouts/basic*.xhtml",
+            "**/webContent/layouts/includes/*.xhtml"
+          ],
+          "words": [
+            "AxonIvy", "axonactive", "ivy", "ivyteam", "wawa", "Up2date",
+            "e2e", "panelgrid", "toggleable", "orderlist", "tablewrapper",
+            "hoverable", "gridlines", "formgrid", "maxdate", "mindate",
+            "chkbox", "confirmdialog", "maximizable", "outputlabel",
+            "webcontent", "Unsorting", "nogutter", "navicon", "HANA",
+            "Recordset", "Recordsets", "fileref", "newkey", "ESIGN",
+            "keyout", "inkey", "Aspose", "primeflex", "primefaces",
+            "dynaForm", "dyna", "Startable", "caseprocessviewer", "EMLX",
+            "visualvm", "vertexai", "webservice", "apikey", "talentlink",
+            "Successfactors", "statefuldatatable", "datatable", "Threema",
+            "threemaid", "Keypair", "azureopenai", "Skribble", "SFTP",
+            "rebex", "sshkey", "Keyphrase", "sshpassphrase", "patterndemos",
+            "suneditor", "chartjs", "datalabels", "metaproc", "masterdetail",
+            "Weblate", "mailstore", "XOAUTH", "sasl", "imap", "imaps",
+            "clazz", "intellix", "Hubspot", "Genderize", "formeditordemos",
+            "DocuWare", "filecabinetid", "DocuSign", "daemonless", "npipe",
+            "docfactory", "deepl", "glassfish", "HSQL", "hsqldb", "Liquibase",
+            "cmseditor", "casemailcomponent", "nbsp", "Servicebus", "axonivypdf",
+            "axonivyexpress", "axonivycells", "approvaldecision", "Analyser",
+            "chatbots", "aiassistant", "adobesign", "atrust", "SOQL",
+            "HandySignatur", "handy-signatur", "SignaturBox", "Signatur-Box"
+          ]
+        }
+        EOF
 
     - name: Run CSpell - Spell Check
       run: |
-        mkdir -p spellcheck
-        cspell lint . \
-          --config cspell.generated.json \
-          --no-progress \
-          --show-context \
-          | tee spellcheck/cspell.txt
+        cspell lint --config ../cspell.json > "$REPO.txt"
+
 
     - name: Upload Spell Check Results
       if: failure()
