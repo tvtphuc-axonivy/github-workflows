@@ -202,7 +202,6 @@ jobs:
         cspell --version
 
     - name: Create custom cspell config
-      if: steps.check_branch.outputs.exists == 'true'
       run: |
         cat > cspell.json <<EOF
         {
@@ -248,7 +247,7 @@ jobs:
 
     - name: Run CSpell - Spell Check
       run: |
-        cspell lint --config ../cspell.json > "$REPO.txt"
+        cspell lint --config cspell.json > "$REPO.txt"
 
 
     - name: Upload Spell Check Results
