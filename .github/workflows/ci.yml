@@ -228,7 +228,13 @@ jobs:
 
     - name: Create custom cspell config
       run: |
-        EXTRA_WORDS="${{ steps.extra_cspell_words.outputs.json_words }}"
+        EXTRA_WORDS='${{ steps.extra_cspell_words.outputs.json_words }}'
+
+        if [ -n "$EXTRA_WORDS" ]; then
+          EXTRA_BLOCK=", $EXTRA_WORDS"
+        else
+          EXTRA_BLOCK=""
+        fi
 
         cat > cspell.json <<EOF
         {
@@ -268,7 +274,7 @@ jobs:
             "axonivyexpress", "axonivycells", "approvaldecision", "Analyser",
             "chatbots", "aiassistant", "adobesign", "atrust", "SOQL",
             "HandySignatur", "handy-signatur", "SignaturBox", "Signatur-Box"
-            ${EXTRA_WORDS:+, "$EXTRA_WORDS"}
+            $EXTRA_BLOCK
           ]
         }
         EOF
