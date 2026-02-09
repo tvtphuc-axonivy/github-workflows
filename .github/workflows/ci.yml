@@ -212,10 +212,17 @@ jobs:
           exit 1
         fi
 
+        # Normalize:
+        # - split by comma or newline
+        # - trim spaces
+        # - remove empty lines
+        # - wrap each word with quotes
         WORDS=$(cat "$FILE" \
-          | tr -d '\n' \
-          | sed 's/ *, */,/g' \
-          | sed 's/,/","/g')
+          | tr ',\n' '\n' \
+          | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+          | sed '/^$/d' \
+          | sed 's/.*/"&"/' \
+          | paste -sd, -)
 
         echo "json_words=$WORDS" >> $GITHUB_OUTPUT
 
