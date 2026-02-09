@@ -196,12 +196,6 @@ jobs:
       # -------------------------------------------------
       # Checkout REUSABLE WORKFLOW repo (for extra words)
       # -------------------------------------------------
-    # 1️⃣ Checkout PARENT repo (root workspace)
-    - name: Checkout parent repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
     # 2️⃣ Checkout REUSABLE repo vào subfolder
     - name: Checkout reusable workflow repository
       uses: actions/checkout@v4
