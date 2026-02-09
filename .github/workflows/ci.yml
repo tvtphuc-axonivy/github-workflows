@@ -196,7 +196,14 @@ jobs:
       # -------------------------------------------------
       # Checkout REUSABLE WORKFLOW repo (for extra words)
       # -------------------------------------------------
-    - name: Checkout reusable workflow repository (for CSpell words)
+    # 1️⃣ Checkout PARENT repo (root workspace)
+    - name: Checkout parent repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # 2️⃣ Checkout REUSABLE repo vào subfolder
+    - name: Checkout reusable workflow repository
       uses: actions/checkout@v4
       with:
         repository: ${{ github.repository }}
@@ -208,7 +215,7 @@ jobs:
     # -------------------------------------------------
     - name: Install CSpell
       run: |
-        npm install -g cspell@8.14.1
+        npm install -g cspell@lastest
         cspell --version
 
     - name: Generate merged CSpell config
