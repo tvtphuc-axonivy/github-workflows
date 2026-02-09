@@ -6,10 +6,6 @@ on:
       mvnArgs:
         type: string
         required: false
-      cspellConfig:
-        type: string
-        required: false
-        default: .github/cspell.json
       cspellExtraWords:
         type: string
         required: false
