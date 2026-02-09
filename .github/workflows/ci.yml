@@ -201,8 +201,28 @@ jobs:
         npm install -g cspell@latest
         cspell --version
 
+    - name: Read extra cspell words from txt
+      id: extra_cspell_words
+      if: inputs.cspellExtraWords != ''
+      run: |
+        FILE="${{ inputs.cspellExtraWords }}"
+
+        if [ ! -f "$FILE" ]; then
+          echo "❌ Extra cspell words file not found: $FILE"
+          exit 1
+        fi
+
+        WORDS=$(cat "$FILE" \
+          | tr -d '\n' \
+          | sed 's/ *, */,/g' \
+          | sed 's/,/","/g')
+
+        echo "json_words=$WORDS" >> $GITHUB_OUTPUT
+
     - name: Create custom cspell config
       run: |
+        EXTRA_WORDS="${{ steps.extra_cspell_words.outputs.json_words }}"
+
         cat > cspell.json <<EOF
         {
           "version": "0.2",
@@ -241,6 +261,7 @@ jobs:
             "axonivyexpress", "axonivycells", "approvaldecision", "Analyser",
             "chatbots", "aiassistant", "adobesign", "atrust", "SOQL",
             "HandySignatur", "handy-signatur", "SignaturBox", "Signatur-Box"
+            ${EXTRA_WORDS:+, "$EXTRA_WORDS"}
           ]
         }
         EOF
