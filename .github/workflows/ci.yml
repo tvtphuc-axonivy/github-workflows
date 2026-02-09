@@ -193,26 +193,40 @@ jobs:
           */target/selenide/*
           */target/ivyEngine/deploy/*/*.deploymentLog
 
+      # -------------------------------------------------
+      # Checkout REUSABLE WORKFLOW repo (for extra words)
+      # -------------------------------------------------
+    - name: Checkout reusable workflow repository
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ github.repository }}
+        ref: ${{ github.workflow_ref }}
+        path: .ci
+
+    # -------------------------------------------------
+    # Install & Run CSpell
+    # -------------------------------------------------
     - name: Install CSpell
       run: |
         npm install -g cspell@8.14.1
-        echo "Cspell Version: $(cspell --version)"
+        cspell --version
 
     - name: Generate merged CSpell config
       run: |
-        BASE_CONFIG="${{ inputs.cspellConfig }}"
-        EXTRA_WORDS_FILE="${{ inputs.cspellExtraWords }}"
+        BASE_CONFIG="${{ inputs.cspellConfig }}"              # from parent repo
+        EXTRA_WORDS_FILE=".ci/.github/cspell-extra-words.txt" # from reusable repo
         GENERATED_CONFIG="cspell.generated.json"
 
         if [ ! -f "$BASE_CONFIG" ]; then
-          echo "❌ Base cspell config not found: $BASE_CONFIG"
+          echo "❌ Base cspell config not found in parent repo: $BASE_CONFIG"
           exit 1
         fi
 
-        if [ -n "$EXTRA_WORDS_FILE" ] && [ -f "$EXTRA_WORDS_FILE" ]; then
-          echo "Merging extra words from $EXTRA_WORDS_FILE"
+        if [ -f "$EXTRA_WORDS_FILE" ]; then
+          echo "Merging extra words from reusable workflow repo"
 
           EXTRA_WORDS_JSON=$(grep -v '^\s*$' "$EXTRA_WORDS_FILE" \
+            | grep -v '^\s*#' \
             | jq -R . \
             | jq -s .)
 
@@ -221,17 +235,16 @@ jobs:
             '.words = (.words + $extraWords | unique)' \
             "$BASE_CONFIG" > "$GENERATED_CONFIG"
         else
-          echo "No extra words file provided, using base config"
+          echo "No reusable extra words file found"
           cp "$BASE_CONFIG" "$GENERATED_CONFIG"
         fi
 
-        echo "Generated CSpell config:"
+        echo "Total words:"
         jq '.words | length' "$GENERATED_CONFIG"
 
     - name: Run CSpell - Spell Check
       run: |
         mkdir -p spellcheck
-
         cspell lint . \
           --config cspell.generated.json \
           --no-progress \
