@@ -215,7 +215,7 @@ jobs:
     # -------------------------------------------------
     - name: Install CSpell
       run: |
-        npm install -g cspell@lastest
+        npm install -g cspell@latest
         cspell --version
 
     - name: Generate merged CSpell config
