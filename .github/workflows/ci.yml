@@ -255,5 +255,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: spellcheck-results
-        path: spellcheck/**/*.txt
+        path: spellcheck.txt
         if-no-files-found: warn
