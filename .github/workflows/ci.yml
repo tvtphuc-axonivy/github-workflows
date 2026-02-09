@@ -196,11 +196,11 @@ jobs:
       # -------------------------------------------------
       # Checkout REUSABLE WORKFLOW repo (for extra words)
       # -------------------------------------------------
-    - name: Checkout reusable workflow repository
+    - name: Checkout reusable workflow repository (for CSpell words)
       uses: actions/checkout@v4
       with:
         repository: ${{ github.repository }}
-        ref: ${{ github.workflow_ref }}
+        ref: ${{ github.ref }}
         path: .ci
 
     # -------------------------------------------------
