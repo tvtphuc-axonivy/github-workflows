@@ -9,7 +9,11 @@ on:
       cspellConfig:
         type: string
         required: false
-        default: .github/workflows/cspell.json
+        default: .github/cspell.json
+      cspellExtraWords:
+        type: string
+        required: false
+        description: Path to text file with additional cspell words
       javaVersion:
         type: number
         default: 21
@@ -194,15 +198,45 @@ jobs:
         npm install -g cspell@8.14.1
         echo "Cspell Version: $(cspell --version)"
 
-    - name: Run CSpell - Spell Check
+    - name: Generate merged CSpell config
       run: |
-        CONFIG="${{ inputs.cspellConfig }}"
-        if [ ! -f "$CONFIG" ]; then
-          echo "❌ cspell config not found: $CONFIG"
+        BASE_CONFIG="${{ inputs.cspellConfig }}"
+        EXTRA_WORDS_FILE="${{ inputs.cspellExtraWords }}"
+        GENERATED_CONFIG="cspell.generated.json"
+
+        if [ ! -f "$BASE_CONFIG" ]; then
+          echo "❌ Base cspell config not found: $BASE_CONFIG"
           exit 1
         fi
+
+        if [ -n "$EXTRA_WORDS_FILE" ] && [ -f "$EXTRA_WORDS_FILE" ]; then
+          echo "Merging extra words from $EXTRA_WORDS_FILE"
+
+          EXTRA_WORDS_JSON=$(grep -v '^\s*$' "$EXTRA_WORDS_FILE" \
+            | jq -R . \
+            | jq -s .)
+
+          jq \
+            --argjson extraWords "$EXTRA_WORDS_JSON" \
+            '.words = (.words + $extraWords | unique)' \
+            "$BASE_CONFIG" > "$GENERATED_CONFIG"
+        else
+          echo "No extra words file provided, using base config"
+          cp "$BASE_CONFIG" "$GENERATED_CONFIG"
+        fi
+
+        echo "Generated CSpell config:"
+        jq '.words | length' "$GENERATED_CONFIG"
+
+    - name: Run CSpell - Spell Check
+      run: |
         mkdir -p spellcheck
-        cspell lint --config "$CONFIG" > spellcheck/cspell.txt
+
+        cspell lint . \
+          --config cspell.generated.json \
+          --no-progress \
+          --show-context \
+          | tee spellcheck/cspell.txt
 
     - name: Upload Spell Check Results
       if: failure()
