@@ -266,6 +266,11 @@ jobs:
         }
         EOF
 
+    - name: Debug cspell config
+      run: |
+        echo "===== cspell.json ====="
+        cat cspell.json
+
     - name: Run CSpell - Spell Check
       run: |
         cspell lint --config cspell.json > spellcheck.txt
